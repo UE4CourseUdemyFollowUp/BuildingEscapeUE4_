@@ -23,6 +23,9 @@ Releases/*
 # Cache files for the editor to use
 DerivedDataCache/*
 
+# Starter Contents. 
+*/StarterContent/*
+
 # Windows image file caches
 Thumbs.db
 ehthumbs.db
@@ -109,6 +112,7 @@ Temporary Items
 *.sdf
 *.sln
 *.VC.*
+*.ipch
 
 # Mac Artifacts
 .DS_Store
