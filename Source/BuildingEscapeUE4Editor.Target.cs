@@ -9,6 +9,9 @@ public class BuildingEscapeUE4EditorTarget : TargetRules
 	{
 		Type = TargetType.Editor;
 
+        bUseUnityBuild = false;
+        bUsePCHFiles = false;
+
 		ExtraModuleNames.AddRange( new string[] { "BuildingEscapeUE4" } );
 	}
 }
