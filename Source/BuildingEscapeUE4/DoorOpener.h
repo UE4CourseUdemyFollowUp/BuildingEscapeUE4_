@@ -26,14 +26,20 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	void RunTheDoor(float DeltaTime);
+
 private:
-	bool bIsMovingForward;
+	bool bIsDoorOpening;
+	float InitialYaw;
 	float CurrentAngle;
-	float Speed;
+	
 	AActor* TheDoor;
 
-	UPROPERTY(VisibleAnywhere)
-	float MaxAngle;
+	UPROPERTY(EditAnywhere)
+	float Speed = 50.f;
+
+	UPROPERTY(EditAnywhere)
+	float OpenAngleLimit = 90.f;
 
 	UPROPERTY(EditAnywhere)
 	ATriggerVolume *PressurePlate;

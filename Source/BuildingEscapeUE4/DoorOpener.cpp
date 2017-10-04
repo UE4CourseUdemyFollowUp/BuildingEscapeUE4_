@@ -1,9 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "DoorOpener.h"
+#include <string>
 
 #include "Runtime/Engine/Classes/Engine/World.h"
 #include "Runtime/Core/Public/GenericPlatform/GenericPlatformMath.h"
+
 
 
 
@@ -26,10 +28,9 @@ void UDoorOpener::BeginPlay()
 	KeyActor = GetWorld()->GetFirstPlayerController()->GetPawn();
 
 	TheDoor = GetOwner();
-	Speed = 50.f;
-	MaxAngle = 110.f;
 	// ...
-	TheDoor->SetActorRotation(FRotator(0.f, 110.f, 0.f));
+	InitialYaw = TheDoor->GetActorRotation().Yaw;
+	UE_LOG(LogTemp, Warning, TEXT("Initial rotation is: %s"), *TheDoor->GetActorRotation().ToCompactString());
 }
 
 
@@ -38,34 +39,51 @@ void UDoorOpener::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	FRotator CurrentRot = TheDoor->GetActorRotation();
-
-	FRotator DiffRot(0.f, 0.f, 0.f);
-	
-	if (CurrentRot.Yaw >= MaxAngle)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Yaw > %s is at %s"), *(TheDoor->GetName()), *CurrentRot.ToCompactString());
-		CurrentRot.Yaw = MaxAngle;
-		bIsMovingForward = true;
-	}
-	else if (CurrentRot.Yaw <= -MaxAngle)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Yaw < %s is at %s"), *(TheDoor->GetName()), *CurrentRot.ToCompactString());
-		CurrentRot.Yaw = -MaxAngle;
-		bIsMovingForward = false;
-	}
-
-	DiffRot.Yaw = DeltaTime * Speed * (bIsMovingForward ? -1 : 1);
-
-	//TheDoor->SetActorRotation(CurrentRot + DiffRot);
-	// ...
-
 	if (PressurePlate)
 	{
-		if (PressurePlate->IsOverlappingActor(KeyActor))
+		if (!bIsDoorOpening && PressurePlate->IsOverlappingActor(KeyActor))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Open the door"));
+			bIsDoorOpening = true;
 		}
-	}	
+		else if (bIsDoorOpening && !PressurePlate->IsOverlappingActor(KeyActor))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Close the door"));
+			bIsDoorOpening = false;
+		}
+	}
+
+	RunTheDoor(DeltaTime);
+}
+
+void UDoorOpener::RunTheDoor(float DeltaTime)
+{
+	// Current rotation of the door and Yaw of the door what we want to reach
+	FRotator CurrentRot = TheDoor->GetActorRotation(); 
+	float TargetYaw = InitialYaw + OpenAngleLimit;
+
+	// Get rid of negative 180 angles. 'false' means we're not doing there anything
+	CurrentRot.Yaw < 0 ? CurrentRot.Yaw += 360.f : false ;
+
+	// Tick rotation
+	FRotator DiffRot(0.f, 0.f, 0.f);
+
+	// Limits of rotation
+	if (bIsDoorOpening && CurrentRot.Yaw > TargetYaw)
+	{
+		CurrentRot.Yaw = TargetYaw;
+	}
+	else if (!bIsDoorOpening && CurrentRot.Yaw < InitialYaw)
+	{
+		CurrentRot.Yaw = InitialYaw;
+	}
+	else
+	{
+		// Calculate Tick rotation according to moving direction
+		DiffRot.Yaw = DeltaTime * Speed * (bIsDoorOpening ? 1 : -1);
+
+		// Apply rotation difference to the actor
+		TheDoor->AddActorLocalRotation(DiffRot);
+	}
 }
 
