@@ -5,6 +5,7 @@
 
 #include "Runtime/Engine/Classes/Engine/World.h"
 #include "Runtime/Core/Public/GenericPlatform/GenericPlatformMath.h"
+#include "Runtime/Engine/Classes/Components/PrimitiveComponent.h"
 
 
 
@@ -25,10 +26,11 @@ void UDoorOpener::BeginPlay()
 {
 	Super::BeginPlay();
 
-	KeyActor = GetWorld()->GetFirstPlayerController()->GetPawn();
-
 	TheDoor = GetOwner();
 	// ...
+	if (!TheDoor)
+		return;
+
 	InitialYaw = TheDoor->GetActorRotation().Yaw;
 	UE_LOG(LogTemp, Warning, TEXT("Initial rotation is: %s"), *TheDoor->GetActorRotation().ToCompactString());
 }
@@ -41,12 +43,12 @@ void UDoorOpener::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 
 	if (PressurePlate)
 	{
-		if (!bIsDoorOpening && PressurePlate->IsOverlappingActor(KeyActor))
+		if (!bIsDoorOpening && GetTotalMassOfActorsOnPlate() > 50.f)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Open the door"));
 			bIsDoorOpening = true;
 		}
-		else if (bIsDoorOpening && !PressurePlate->IsOverlappingActor(KeyActor))
+		else if (bIsDoorOpening && GetTotalMassOfActorsOnPlate() < 50.f)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Close the door"));
 			bIsDoorOpening = false;
@@ -58,6 +60,9 @@ void UDoorOpener::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 
 void UDoorOpener::RunTheDoor(float DeltaTime)
 {
+	if (!TheDoor)
+		return;
+
 	// Current rotation of the door and Yaw of the door what we want to reach
 	FRotator CurrentRot = TheDoor->GetActorRotation(); 
 	float TargetYaw = InitialYaw + OpenAngleLimit;
@@ -85,5 +90,22 @@ void UDoorOpener::RunTheDoor(float DeltaTime)
 		// Apply rotation difference to the actor
 		TheDoor->AddActorLocalRotation(DiffRot);
 	}
+}
+
+float UDoorOpener::GetTotalMassOfActorsOnPlate()
+{
+	float TotalMass = 0.f;
+	TArray<AActor*> OverlappingActors;
+	if (PressurePlate)
+	{
+		PressurePlate->GetOverlappingActors(OverlappingActors);
+
+		for (auto& Actor : OverlappingActors)
+		{
+			TotalMass += Actor->FindComponentByClass<UPrimitiveComponent>()->GetMass();
+		}
+	}
+
+	return TotalMass;
 }
 

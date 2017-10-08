@@ -9,6 +9,18 @@
 class UPhysicsHandleComponent;
 class UInputComponent;
 
+USTRUCT()
+struct FViewLine
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FVector ViewLineStart;
+
+	UPROPERTY()
+	FVector ViewLineEnd;
+};
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class BUILDINGESCAPEUE4_API UGrabber : public UActorComponent
 {
@@ -26,6 +38,8 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	
+
 private:
 	void Grab();
 	void Release();
@@ -35,11 +49,13 @@ private:
 
 	FHitResult GetFirstHitPhysicsBody() const;
 
+	FViewLine GetViewLine() const;
+
 private:
 
 	// Length of grabber "hands"
 	UPROPERTY(EditAnywhere)
-	float Reach = 100.f;
+	float HandLength = 100.f;
 
 	UPhysicsHandleComponent* PhysicsHandle;
 

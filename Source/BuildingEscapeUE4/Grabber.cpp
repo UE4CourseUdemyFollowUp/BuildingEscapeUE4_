@@ -6,6 +6,7 @@
 #include "Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h"
 #include "Runtime/Engine/Classes/PhysicsEngine/PhysicsHandleComponent.h"
 #include "Runtime/Engine/Classes/Components/InputComponent.h"
+#include "Runtime/Engine/Classes/Components/PrimitiveComponent.h"
 #include "DrawDebugHelpers.h"
 
 
@@ -37,22 +38,44 @@ void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompone
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
+	if (!PhysicsHandle)
+		return;
+
+	if (PhysicsHandle->GrabbedComponent)
+	{
+		FViewLine ViewLine = GetViewLine();
+
+		PhysicsHandle->SetTargetLocation(ViewLine.ViewLineEnd);
+	}
+
 }
 
 void UGrabber::Grab()
 {
 	FHitResult HitResult = GetFirstHitPhysicsBody();
+	auto ComponentToGrab = HitResult.GetComponent();
 	AActor* ActorHit = HitResult.GetActor();
-	if (ActorHit)
+	if (!ActorHit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Grabber detects: %s"), *(ActorHit->GetName()));
-
+		UE_LOG(LogTemp, Warning, TEXT("Grabber doesn't hit anything"));
+		return;
 	}
+	if (PhysicsHandle)
+	{
+		PhysicsHandle->GrabComponent(
+			ComponentToGrab,
+			NAME_None,
+			ComponentToGrab->GetOwner()->GetActorLocation(),
+			false);
+	}
+
 }
 
 void UGrabber::Release()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Grabber releases"));
+	if(PhysicsHandle)
+		PhysicsHandle->ReleaseComponent();
 }
 
 bool UGrabber::CheckPhysicsHandleComponent()
@@ -83,22 +106,30 @@ bool UGrabber::SetupInputComponent()
 
 FHitResult UGrabber::GetFirstHitPhysicsBody() const
 {
-	FVector PViewLocation;
-	FRotator PViewRotation;
-	GetWorld()->GetFirstPlayerController()->GetPlayerViewPoint(PViewLocation, PViewRotation);
-
-	FVector ViewEndPoint = PViewLocation + PViewRotation.Vector() * Reach;
+	FViewLine ViewLine = GetViewLine();
 
 	FCollisionQueryParams CollisionQueryParams(FName(TEXT("")), false, GetOwner());
 	FHitResult Hit;
 
 	GetWorld()->LineTraceSingleByObjectType(
 		Hit,
-		PViewLocation,
-		ViewEndPoint,
+		ViewLine.ViewLineStart,
+		ViewLine.ViewLineEnd,
 		FCollisionObjectQueryParams(ECollisionChannel::ECC_PhysicsBody),
 		CollisionQueryParams);
 
 	return Hit;
+}
+
+FViewLine UGrabber::GetViewLine() const
+{
+	FViewLine ViewLine;
+
+	FRotator PViewRotation;
+	GetWorld()->GetFirstPlayerController()->GetPlayerViewPoint(ViewLine.ViewLineStart, PViewRotation);
+
+	ViewLine.ViewLineEnd = ViewLine.ViewLineStart + PViewRotation.Vector() * HandLength;
+
+	return ViewLine;
 }
 

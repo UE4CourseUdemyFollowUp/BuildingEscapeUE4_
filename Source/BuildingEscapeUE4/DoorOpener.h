@@ -28,6 +28,8 @@ public:
 
 	void RunTheDoor(float DeltaTime);
 
+	float GetTotalMassOfActorsOnPlate();
+
 private:
 	bool bIsDoorOpening;
 	float InitialYaw;
@@ -43,7 +45,4 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	ATriggerVolume *PressurePlate;
-
-	UPROPERTY(EditAnywhere)
-	AActor* KeyActor;
 };
