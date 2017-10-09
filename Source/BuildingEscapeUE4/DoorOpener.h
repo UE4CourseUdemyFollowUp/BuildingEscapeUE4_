@@ -8,6 +8,7 @@
 #include "GameFramework/Actor.h"
 #include "DoorOpener.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDoorRequest);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class BUILDINGESCAPEUE4_API UDoorOpener : public UActorComponent
@@ -26,22 +27,20 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	void RunTheDoor(float DeltaTime);
-
 	float GetTotalMassOfActorsOnPlate();
 
-private:
-	bool bIsDoorOpening;
-	float InitialYaw;
-	float CurrentAngle;
-	
+public:
+	UPROPERTY(BlueprintAssignable)
+	FOnDoorRequest OnOpenDoor;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnDoorRequest OnCloseDoor;
+
+private:	
 	AActor* TheDoor;
 
 	UPROPERTY(EditAnywhere)
-	float Speed = 50.f;
-
-	UPROPERTY(EditAnywhere)
-	float OpenAngleLimit = 90.f;
+	float TriggerMass;
 
 	UPROPERTY(EditAnywhere)
 	ATriggerVolume *PressurePlate;

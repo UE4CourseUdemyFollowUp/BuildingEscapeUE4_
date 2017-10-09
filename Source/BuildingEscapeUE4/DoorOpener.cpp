@@ -20,7 +20,6 @@ UDoorOpener::UDoorOpener()
 	// ...
 }
 
-
 // Called when the game starts
 void UDoorOpener::BeginPlay()
 {
@@ -31,7 +30,6 @@ void UDoorOpener::BeginPlay()
 	if (!TheDoor)
 		return;
 
-	InitialYaw = TheDoor->GetActorRotation().Yaw;
 	UE_LOG(LogTemp, Warning, TEXT("Initial rotation is: %s"), *TheDoor->GetActorRotation().ToCompactString());
 }
 
@@ -43,52 +41,16 @@ void UDoorOpener::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 
 	if (PressurePlate)
 	{
-		if (!bIsDoorOpening && GetTotalMassOfActorsOnPlate() > 50.f)
+		if (GetTotalMassOfActorsOnPlate() > TriggerMass)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Open the door"));
-			bIsDoorOpening = true;
+			OnOpenDoor.Broadcast();
 		}
-		else if (bIsDoorOpening && GetTotalMassOfActorsOnPlate() < 50.f)
+		else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Close the door"));
-			bIsDoorOpening = false;
+			OnCloseDoor.Broadcast();
 		}
-	}
-
-	RunTheDoor(DeltaTime);
-}
-
-void UDoorOpener::RunTheDoor(float DeltaTime)
-{
-	if (!TheDoor)
-		return;
-
-	// Current rotation of the door and Yaw of the door what we want to reach
-	FRotator CurrentRot = TheDoor->GetActorRotation(); 
-	float TargetYaw = InitialYaw + OpenAngleLimit;
-
-	// Get rid of negative 180 angles. 'false' means we're not doing there anything
-	CurrentRot.Yaw < 0 ? CurrentRot.Yaw += 360.f : false ;
-
-	// Tick rotation
-	FRotator DiffRot(0.f, 0.f, 0.f);
-
-	// Limits of rotation
-	if (bIsDoorOpening && CurrentRot.Yaw > TargetYaw)
-	{
-		CurrentRot.Yaw = TargetYaw;
-	}
-	else if (!bIsDoorOpening && CurrentRot.Yaw < InitialYaw)
-	{
-		CurrentRot.Yaw = InitialYaw;
-	}
-	else
-	{
-		// Calculate Tick rotation according to moving direction
-		DiffRot.Yaw = DeltaTime * Speed * (bIsDoorOpening ? 1 : -1);
-
-		// Apply rotation difference to the actor
-		TheDoor->AddActorLocalRotation(DiffRot);
 	}
 }
 
